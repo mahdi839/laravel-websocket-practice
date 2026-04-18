@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Events\MemberCreated;
 use App\Models\Member;
+use App\Models\User;
+use App\Notifications\MemberCreatedNotification;
 use Illuminate\Http\Request;
 
 class MemberController extends Controller
@@ -13,20 +15,27 @@ class MemberController extends Controller
         return view('home');
     }
 
-    public function store(Request $request)
+     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required',
             'phone' => 'required',
-            'email' => 'required',
+            'email' => 'required|email',
             'address' => 'required',
         ]);
 
         $member = Member::create($validated);
-        event(new MemberCreated($member));
 
-        return redirect()
-            ->back()
-            ->with('success', 'Member created successfully and email sent.');
+        // Example: notify user ID 1
+        $user = User::find(1);
+
+        if ($user) {
+            $user->notify(new MemberCreatedNotification($member));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Member created and notification sent.',
+        ]);
     }
 }
